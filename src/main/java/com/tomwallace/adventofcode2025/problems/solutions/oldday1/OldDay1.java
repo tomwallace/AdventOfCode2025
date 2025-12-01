@@ -20,7 +20,7 @@ public class OldDay1 implements IAdventProblemSet {
      * {@inheritDoc}
      */
     public Integer sortOrder() {
-        return 1;
+        return 99;
     }
 
     /***
