@@ -111,7 +111,6 @@ public class Day2Tests {
         assertEquals("23039913998", result);
     }
 
-    // 6536 too high
     @Test
     public void partB_Actual() {
         var sut = new Day2();
