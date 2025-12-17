@@ -5,6 +5,8 @@ import com.tomwallace.adventofcode2025.problems.Difficulty;
 import com.tomwallace.adventofcode2025.problems.IAdventProblemSet;
 import com.tomwallace.adventofcode2025.utilities.FileUtility;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class Day9 implements IAdventProblemSet {
@@ -35,15 +37,15 @@ public class Day9 implements IAdventProblemSet {
      */
     public String partB() {
         var filePath = FileUtility.dataPath + "Day9Input.txt";
-        //var count = countFreshIngredients(filePath, true);
-        return "";
+        var area = findBiggestAreaInPolygon(filePath);
+        return area.toString();
     }
 
     /***
      * {@inheritDoc}
      */
     public Difficulty difficulty() {
-        return Difficulty.EASY;
+        return Difficulty.HARD;
     }
 
     /***
@@ -54,48 +56,87 @@ public class Day9 implements IAdventProblemSet {
     }
 
     protected Long findLargestArea(String filePath) {
-        var points = FileUtility.parseFileToList(filePath, line -> {
+        var redTiles = getRedTiles(filePath);
+        var rectangles = getRectangles(redTiles);
+        var sortedPairs = rectangles.stream()
+                .sorted(Comparator.comparingLong(Rectangle::area).reversed())
+                .toList();
+        return sortedPairs.getFirst().area();
+    }
+
+    protected Long findBiggestAreaInPolygon(String filePath) {
+        var redTiles = getRedTiles(filePath);
+        var rectangles = getRectangles(redTiles);
+        return findBiggestAreaInPolygon(rectangles, getEdgesOfPolygon(redTiles));
+    }
+
+    private List<Point> getRedTiles(String filePath) {
+        return FileUtility.parseFileToList(filePath, line -> {
             var split = line.split(",");
             return new Point(Integer.parseInt(split[0]), Integer.parseInt(split[1]));
         });
-        var largestArea = 0L;
-        for (var i  = 0; i < points.size(); i++) {
-            for (int j = i + 1; j < points.size(); j++) {
+    }
+
+    private List<Rectangle> getRectangles(List<Point> corners) {
+        var rectangles = new ArrayList<Rectangle>();
+        for (var i  = 0; i < corners.size(); i++) {
+            for (int j = i + 1; j < corners.size(); j++) {
                 if (i == j) {
                     continue;
                 }
-                var area = findRectangleArea(points.get(i), points.get(j));
-                if (area > largestArea) {
-                    largestArea = area;
-                }
+                rectangles.add(new Rectangle(corners.get(i), corners.get(j)));
             }
         }
-
-        return largestArea;
+        return rectangles;
     }
 
-    protected Long findLargestRectangleAreaInPerimeter(String filePath) {
-        // TODO: TW - return after thought
-        return 0L;
+    private Long findBiggestAreaInPolygon(List<Rectangle> rectangles, List<Edge> polygon) {
+        var maxArea = 0L;
+        for (var  rectangle : rectangles) {
+            if (!rectangle.intersects(polygon)) {
+                maxArea = Math.max(maxArea, rectangle.area());
+            }
+        }
+        return maxArea;
     }
 
-    private long findRectangleArea(Point a, Point b) {
-        var sideOne = Math.abs(a.x() - b.x()) + 1;
-        var sideTwo = Math.abs(a.y() - b.y()) + 1;
-        return (long) sideOne * sideTwo;
+    private List<Edge> getEdgesOfPolygon(List<Point> redTiles) {
+        final List<Edge> result = new ArrayList<>();
+        for (int i = 0; i < redTiles.size(); i++) {
+            var current = redTiles.get(i);
+            var next = redTiles.get(i < redTiles.size() - 1 ? i + 1 : 0);
+            result.add(new Edge(current, next));
+        }
+        // Connect the last and first to complete the polygon
+        result.add(new Edge(redTiles.getLast(), redTiles.getFirst()));
+        return result;
     }
 
-    private boolean isPointInAnyPair(List<Pair> pairs, Point point) {
-        return pairs.stream().anyMatch(p -> isPointInRectangle(p, point));
-    }
+    private record Edge(Point r1, Point r2) {}
 
-    private boolean isPointInRectangle(Pair pair, Point target) {
-        var minX = Math.min(pair.a().x(), pair.b().x());
-        var minY = Math.min(pair.a().y(), pair.b().y());
-        var maxX = Math.max(pair.a().x(), pair.b().x());
-        var maxY = Math.max(pair.a().y(), pair.b().y());
-        return target.x() >= minX && target.x() <= maxX && target.y() >= minY && target.y() <= maxY;
-    }
+    private record Rectangle(Point r1, Point r2) {
+        public Long area() {
+            return (long) (Math.abs(r1.x() - r2.x()) + 1) * (Math.abs(r1.y() - r2.y()) + 1);
+        }
 
-    private record Pair(Point a, Point b) {}
+        // Based upon https://kishimotostudios.com/articles/aabb_collision/
+        public boolean intersects(final List<Edge> edges) {
+            final long minX = Math.min(r1.x(), r2.x());
+            final long maxX = Math.max(r1.x(), r2.x());
+            final long minY = Math.min(r1.y(), r2.y());
+            final long maxY = Math.max(r1.y(), r2.y());
+
+            for (final Edge e : edges) {
+                final long eMinX = Math.min(e.r1().x(), e.r2().x());
+                final long eMaxX = Math.max(e.r1().x(), e.r2().x());
+                final long eMinY = Math.min(e.r1().y(), e.r2().y());
+                final long eMaxY = Math.max(e.r1().y(), e.r2().y());
+
+                if (minX < eMaxX && maxX > eMinX && minY < eMaxY && maxY > eMinY) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
 }

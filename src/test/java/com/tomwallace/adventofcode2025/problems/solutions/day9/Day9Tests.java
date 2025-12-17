@@ -17,6 +17,15 @@ public class Day9Tests {
     }
 
     @Test
+    public void findBiggestAreaInPolygon() {
+        var filePath = FileUtility.testDataPath + "Day9TestInputA.txt";
+        var sut = new Day9();
+        var result = sut.findBiggestAreaInPolygon(filePath);
+
+        assertEquals(24L, result);
+    }
+
+    @Test
     public void partA_Actual() {
         var sut = new Day9();
         var result = sut.partA();
@@ -29,6 +38,6 @@ public class Day9Tests {
         var sut = new Day9();
         var result = sut.partB();
 
-        assertEquals("-1", result);
+        assertEquals("1429596008", result);
     }
 }

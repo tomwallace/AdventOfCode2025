@@ -60,9 +60,6 @@ public class Day1 implements IAdventProblemSet {
         for (var inst : instructions) {
             var result = findNewDialPosition(currentPosition, inst);
 
-            // TODO: TW - remove eventually, keep for reference on output
-            //System.out.println("Inst: " + inst +  " Moved from " + currentPosition + " to " + result.dialPosition + " passing zero " + result.timesPastZero + " times.");
-
             currentPosition = result.dialPosition;
             allTimesAtZero += result.timesPastZero;
             if (currentPosition == 0) {
